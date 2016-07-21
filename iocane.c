@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <X11/Xlib.h>
+#include <X11/extensions/XTest.h>
 
 #define MAXLINE		100
 #define MAXSYMLEN	12
@@ -121,35 +122,17 @@ static void toggle_interactive_mode()
  * doRelease.
  */
 static void press(int arg, Bool doPress, Bool doRelease) {
-	XEvent ev;
-	memset(&ev, 0x00, sizeof(ev));
 	usleep(100000); /* wait for 0.1 s */
-	ev.type = ButtonPress;
-	ev.xbutton.button = arg;
-	ev.xbutton.same_screen = True;
-	/* fetch current coordinates of pointer; stored in ev */
-	XQueryPointer(dpy, root, &ev.xbutton.root, &ev.xbutton.window,
-			&ev.xbutton.x_root, &ev.xbutton.y_root, &ev.xbutton.x,
-			&ev.xbutton.y,&ev.xbutton.state);
-	ev.xbutton.subwindow = ev.xbutton.window;
-	while(ev.xbutton.subwindow) {
-		ev.xbutton.window = ev.xbutton.subwindow;
-		XQueryPointer(dpy, ev.xbutton.window, &ev.xbutton.root,
-				&ev.xbutton.subwindow, &ev.xbutton.x_root, &ev.xbutton.y_root,
-				&ev.xbutton.x, &ev.xbutton.y, &ev.xbutton.state);
-	}
 	if (doPress) {
 		/* send press command */
-		XSendEvent(dpy,PointerWindow,True,0xfff,&ev);
+		XTestFakeButtonEvent(dpy, arg, True, CurrentTime);
 		XFlush(dpy);
 		usleep(100000); /* wait for 0.1 s */
 	}
 	if (doRelease)
 	{
 		/* send release command */
-		ev.type = ButtonRelease;
-		ev.xbutton.state = 0x400;
-		XSendEvent(dpy,PointerWindow, True, 0xfff, &ev);
+		XTestFakeButtonEvent(dpy, arg, False, CurrentTime);
 		XFlush(dpy);
 	}
 }
